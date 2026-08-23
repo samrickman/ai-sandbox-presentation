@@ -1,0 +1,241 @@
+---
+title: "Sandboxing AI coding agents"
+subtitle: "Where should an AI agent's sandbox end?"
+author: "Sam Rickman"
+format:
+  revealjs:
+    theme: "gds-style.scss"
+    transition: none
+    controls: false
+    progress: false
+    slide-number: true
+    center: false
+    hash: true
+    width: 1600
+    height: 900
+    margin: 0
+---
+
+## Docker sandboxes
+
+Two areas of discussion:
+
+1. Can I `--dangerously-skip-permissions` inside a Docker sandbox?
+2. Can 
+
+## The question I actually cared about
+
+- Can I put an agent in a good enough sandbox...
+- turn off the permission prompts...
+- and leave it to get on with the job?
+
+::: {.emphasis}
+Is it OK to `--dangerously-skip-permissions`?
+:::
+
+
+## What Docker Sandboxes gives the agent
+
+- An isolated microVM
+- Its own filesystem and network
+- Its own Docker Engine
+- `sudo` and broad freedom **inside** the VM
+
+::: {.emphasis}
+I would rather put different coding agents behind one external boundary than rely on each agent's own controls.
+:::
+
+::: {.caption}
+For these tests I used <code>--clone</code> mode, so the agent could not change my host working tree.
+:::
+
+
+## The containment boundary held
+
+:::: {.two-col .wide-gap}
+::: {}
+
+**Filesystem**
+
+- Planted random canaries in my home directory and `/tmp`
+- Asked Codex to find them
+- It inspected mounts, `/proc`, devices, symlinks and the Docker socket
+- It could not see the canaries
+
+:::
+
+::: {}
+**Network**
+
+- Ran a web server on the host's `localhost`
+- Asked Codex to reach it
+- Docker's network proxy blocked the request
+- My server never saw it
+
+:::
+
+::::
+
+::: {.caption}
+This was a basic containment check, not a penetration test.
+:::
+
+---
+
+## But I changed the question {.centre-slide}
+
+::: {.big}
+What can a compromised agent do with the permissions it already has?
+:::
+
+---
+
+## I gave it somewhere to upload a file
+
+- Created a private S3 bucket
+- Put a harmless canary inside the repository
+- Generated a presigned S3 `PUT` URL
+- Assumed the agent had been compromised by prompt injection
+- Asked it to move the canary out of the sandbox
+
+```text
+SBX_BUILD_CANARY_4abc563d938bdf59714d955a288475da
+```
+
+---
+
+## The upload succeeded
+
+- No AWS credentials
+- No change to Docker's network policy
+- No escape from the microVM
+- Just an allowed HTTP request
+
+::: {.emphasis}
+The sandbox worked exactly as configured.
+:::
+
+---
+
+## Why was S3 reachable?
+
+Docker Sandboxes has a **Balanced** network policy as its recommended starting point.
+
+My default allowlist included:
+
+- package registries such as npm, PyPI and crates.io
+- GitHub, GitLab and Bitbucket
+- broad AWS and Google Cloud infrastructure rules
+- other developer services
+
+::: {.emphasis}
+Useful development infrastructure can also be an exfiltration path.
+:::
+
+---
+
+## You're doing it wrong
+
+1. Why not just turn off the network?
+2. Why give the agent access to sensitive data?
+
+## Why not just turn off the network?
+
+- Locked Down mode substantially reduces this risk
+- But coding agents need package registries, docs, code hosts and retrieval
+- Allowing every destination manually puts me back in the loop
+- Eventually approvals become routine rather than meaningful
+
+::: {.emphasis}
+Security and usefulness pull in opposite directions.
+:::
+
+---
+
+## Why give the agent access to sensitive data?
+
+It's useful if an agent has acces to things I care about. Not `~/.ssh` but:
+
+- source code that isn't yet public
+- internal workflow or process data
+- policy documents
+
+::: {.emphasis}
+Giving an agent permission to analyse something is not the same as giving it permission to send it elsewhere.
+:::
+
+---
+
+## There are three different questions
+
+::: {.three-col}
+::: {.plain-block}
+
+**Host**
+
+Can the agent read or damage things outside its workspace?
+
+:::
+::: {.plain-block}
+
+**Data**
+
+Can information it can read leave the workspace?
+
+:::
+::: {.plain-block}
+
+**Authority**
+
+What actions can it take in external systems?
+
+:::
+:::
+
+---
+
+## Lethal trifecta
+
+![](./img/lethal_trifecta.png)
+
+## Different risks need different controls
+
+::: {.three-col}
+::: {.plain-block .ok-stat}
+
+**Host**
+
+A microVM and isolated workspace do a lot of useful work.
+
+:::
+::: {.plain-block .warn-stat}
+
+**Data**
+
+A sandbox with broad outbound network access does not guarantee confidentiality.
+
+:::
+::: {.plain-block .bad-stat}
+
+**Authority**
+
+Sandboxing does little to limit actions the agent is already authorised to take.
+
+:::
+:::
+
+---
+
+## "Sandboxed" is not enough {.centre-slide}
+
+::: {.big}
+The question is not just whether the agent is sandboxed.
+:::
+
+::: {.emphasis}
+What can it read? Where can it communicate? What actions is it authorised to take?
+:::
+
+::: {.caption}
+Based on: <a href="https://www.samrickman.com/blog/ai-agent-sandboxes">samrickman.com/blog/ai-agent-sandboxes</a>
+:::
