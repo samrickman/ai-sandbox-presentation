@@ -98,7 +98,7 @@
     code span.vs { color: #20794d; } /* VerbatimString */
     code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </style>
-  <link rel="stylesheet" href="ai-agent-sandboxing-gds_files/libs/revealjs/dist/theme/quarto-14d2ea0c5b430c7500e0770e3fd3583d.css">
+  <link rel="stylesheet" href="ai-agent-sandboxing-gds_files/libs/revealjs/dist/theme/quarto-e6fe99d287de9a7c345cda1808910228.css">
   <link href="ai-agent-sandboxing-gds_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="ai-agent-sandboxing-gds_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="ai-agent-sandboxing-gds_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -213,11 +213,11 @@ Sam Rickman
 <p>Two areas of discussion:</p>
 <ol type="1">
 <li>Can I <code>--dangerously-skip-permissions</code> inside a Docker sandbox?</li>
-<li>Can</li>
+<li>Can a sandboxed agent leave code for my host to execute?</li>
 </ol>
 </section>
 <section id="the-question-i-actually-cared-about" class="slide level2">
-<h2>The question I actually cared about</h2>
+<h2>1. The question I actually cared about</h2>
 <ul>
 <li>Can I put an agent in a good enough sandbox…</li>
 <li>turn off the permission prompts…</li>
@@ -235,12 +235,7 @@ Sam Rickman
 <li>Its own Docker Engine</li>
 <li><code>sudo</code> and broad freedom <strong>inside</strong> the VM</li>
 </ul>
-<div class="emphasis">
-<p>I would rather put different coding agents behind one external boundary than rely on each agent’s own controls.</p>
-</div>
-<div class="caption">
-<p>For these tests I used <code>–clone</code> mode, so the agent could not change my host working tree.</p>
-</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href=""></a><span class="ex">sbx</span> run [claude<span class="kw">|</span><span class="ex">codex</span><span class="kw">|</span><span class="ex">opencode]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="the-containment-boundary-held" class="slide level2">
 <h2>The containment boundary held</h2>
@@ -283,7 +278,7 @@ Sam Rickman
 <li>Assumed the agent had been compromised by prompt injection</li>
 <li>Asked it to move the canary out of the sandbox</li>
 </ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb1-1"><a href=""></a>SBX_BUILD_CANARY_4abc563d938bdf59714d955a288475da</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a href=""></a>SBX_BUILD_CANARY_4abc563d938bdf59714d955a288475da</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="the-upload-succeeded" class="slide level2">
 <h2>The upload succeeded</h2>
@@ -299,17 +294,16 @@ Sam Rickman
 </section>
 <section id="why-was-s3-reachable" class="slide level2">
 <h2>Why was S3 reachable?</h2>
-<p>Docker Sandboxes has a <strong>Balanced</strong> network policy as its recommended starting point.</p>
-<p>My default allowlist included:</p>
+<p>Docker describes its <strong>Balanced</strong> network policy as <em>a good starting point for most workflows</em>:</p>
+<blockquote>
+<p>Default deny, with a baseline allowlist covering AI provider APIs, package managers, code hosts, container registries, and common cloud services.</p>
+</blockquote>
+<p>Includes:</p>
 <ul>
-<li>package registries such as npm, PyPI and crates.io</li>
-<li>GitHub, GitLab and Bitbucket</li>
-<li>broad AWS and Google Cloud infrastructure rules</li>
-<li>other developer services</li>
+<li>npm, PyPI, RubyGems, crates.io</li>
+<li>GitHub, GitLab, SourceForge, Bitbucket</li>
+<li>Various AWS, Azure Blob Storage, and GCP endpoints</li>
 </ul>
-<div class="emphasis">
-<p>Useful development infrastructure can also be an exfiltration path.</p>
-</div>
 </section>
 <section id="youre-doing-it-wrong" class="slide level2">
 <h2>You’re doing it wrong</h2>
@@ -330,6 +324,14 @@ Sam Rickman
 <p>Security and usefulness pull in opposite directions.</p>
 </div>
 </section>
+<section id="livebrowsecomp" class="slide level2">
+<h2>LiveBrowseComp</h2>
+<ul>
+<li>May 2026 benchmark paper with and without tool use.</li>
+<li>Tool access improved some scores by ~50%.</li>
+<li>On a new benchmark built on recent info, all agents scored &lt;2% without network access tools.</li>
+</ul>
+</section>
 <section id="why-give-the-agent-access-to-sensitive-data" class="slide level2">
 <h2>Why give the agent access to sensitive data?</h2>
 <p>It’s useful if an agent has acces to things I care about. Not <code>~/.ssh</code> but:</p>
@@ -340,23 +342,6 @@ Sam Rickman
 </ul>
 <div class="emphasis">
 <p>Giving an agent permission to analyse something is not the same as giving it permission to send it elsewhere.</p>
-</div>
-</section>
-<section id="there-are-three-different-questions" class="slide level2">
-<h2>There are three different questions</h2>
-<div class="three-col">
-<div class="plain-block">
-<p><strong>Host</strong></p>
-<p>Can the agent read or damage things outside its workspace?</p>
-</div>
-<div class="plain-block">
-<p><strong>Data</strong></p>
-<p>Can information it can read leave the workspace?</p>
-</div>
-<div class="plain-block">
-<p><strong>Authority</strong></p>
-<p>What actions can it take in external systems?</p>
-</div>
 </div>
 </section>
 <section id="lethal-trifecta" class="slide level2">

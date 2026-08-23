@@ -21,9 +21,9 @@ format:
 Two areas of discussion:
 
 1. Can I `--dangerously-skip-permissions` inside a Docker sandbox?
-2. Can 
+2. Can a sandboxed agent leave code for my host to execute?
 
-## The question I actually cared about
+## 1. The question I actually cared about
 
 - Can I put an agent in a good enough sandbox...
 - turn off the permission prompts...
@@ -41,14 +41,9 @@ Is it OK to `--dangerously-skip-permissions`?
 - Its own Docker Engine
 - `sudo` and broad freedom **inside** the VM
 
-::: {.emphasis}
-I would rather put different coding agents behind one external boundary than rely on each agent's own controls.
-:::
-
-::: {.caption}
-For these tests I used <code>--clone</code> mode, so the agent could not change my host working tree.
-:::
-
+```bash
+sbx run [claude|codex|opencode]
+```
 
 ## The containment boundary held
 
@@ -119,18 +114,15 @@ The sandbox worked exactly as configured.
 
 ## Why was S3 reachable?
 
-Docker Sandboxes has a **Balanced** network policy as its recommended starting point.
+Docker describes its **Balanced** network policy as _a good starting point for most workflows_:
 
-My default allowlist included:
+> Default deny, with a baseline allowlist covering AI provider APIs, package managers, code hosts, container registries, and common cloud services.
 
-- package registries such as npm, PyPI and crates.io
-- GitHub, GitLab and Bitbucket
-- broad AWS and Google Cloud infrastructure rules
-- other developer services
+Includes:
 
-::: {.emphasis}
-Useful development infrastructure can also be an exfiltration path.
-:::
+- npm, PyPI, RubyGems, crates.io
+- GitHub, GitLab, SourceForge, Bitbucket
+- Various AWS, Azure Blob Storage, and GCP endpoints
 
 ---
 
@@ -152,6 +144,12 @@ Security and usefulness pull in opposite directions.
 
 ---
 
+## LiveBrowseComp
+
+- May 2026 benchmark paper with and without tool use.
+- Tool access improved some scores by ~50%.
+- On a new benchmark built on recent info, all agents scored <2% without network access tools.
+
 ## Why give the agent access to sensitive data?
 
 It's useful if an agent has acces to things I care about. Not `~/.ssh` but:
@@ -162,34 +160,6 @@ It's useful if an agent has acces to things I care about. Not `~/.ssh` but:
 
 ::: {.emphasis}
 Giving an agent permission to analyse something is not the same as giving it permission to send it elsewhere.
-:::
-
----
-
-## There are three different questions
-
-::: {.three-col}
-::: {.plain-block}
-
-**Host**
-
-Can the agent read or damage things outside its workspace?
-
-:::
-::: {.plain-block}
-
-**Data**
-
-Can information it can read leave the workspace?
-
-:::
-::: {.plain-block}
-
-**Authority**
-
-What actions can it take in external systems?
-
-:::
 :::
 
 ---
