@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sandbox policy and the lethal trifecta</title>
+<style>
+  :root {
+    --bg: #f8f8f8;
+    --text: #0b0c0c;
+    --muted: #505a5f;
+    --yellow: #FCE28F;
+    --green: #B8DFB9;
+    --pink: #F5AEC2;
+    --metric-fill: #505a5f;
+    --metric-track: #d8dde0;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; margin: 0; background: var(--bg); color: var(--text); font-family: Arial, Helvetica, sans-serif; }
+  body { overflow: hidden; }
+
+  #app {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-rows: auto 1fr auto auto;
+    padding: clamp(18px, 2.3vw, 42px) clamp(24px, 4vw, 72px) clamp(18px, 2.2vw, 34px);
+    background: var(--bg);
+  }
+
+  header { text-align: center; min-width: 0; }
+  h1 { margin: 0; font-size: clamp(28px, 4.1vw, 64px); line-height: 1.02; letter-spacing: -0.025em; font-weight: 700; }
+  #subtitle { margin: 10px auto 0; max-width: 1050px; color: var(--muted); font-size: clamp(15px, 1.6vw, 24px); line-height: 1.25; min-height: 1.3em; }
+
+  .viz-wrap { min-height: 0; display: flex; align-items: center; justify-content: center; padding-top: 4px; }
+  svg { width: min(100%, 1120px); height: 100%; min-height: 0; display: block; overflow: visible; }
+
+  .circle-fill { opacity: 0.76; }
+  .removed { fill: url(#hatch); stroke: var(--muted); stroke-width: 2.5; stroke-linejoin: round; }
+  .disabled-circle { fill: url(#hatch); stroke: var(--muted); stroke-width: 2.5; }
+
+  .circle-label { fill: var(--text); font-size: 23px; font-weight: 700; text-anchor: middle; }
+  .private-label { text-anchor: start; }
+  .pair-label rect { fill: var(--bg); opacity: 0.93; rx: 7; }
+  .pair-label text { fill: var(--text); font-size: 22px; font-weight: 700; text-anchor: middle; }
+  #centre-label { fill: var(--text); font-size: 22px; font-weight: 700; text-anchor: middle; }
+  #legend { fill: var(--muted); font-size: 18px; text-anchor: middle; }
+
+  .metrics { width: min(100%, 1080px); margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 5vw, 80px); align-items: end; }
+  .metric { min-width: 0; }
+  .metric-head { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin-bottom: 7px; font-size: clamp(14px, 1.25vw, 19px); }
+  .metric-head strong { font-weight: 700; }
+  .metric-head span { color: var(--muted); white-space: nowrap; }
+  .metric-track { height: 12px; border-radius: 999px; background: var(--metric-track); overflow: hidden; }
+  .metric-fill { width: 0; height: 100%; border-radius: inherit; background: var(--metric-fill); transition: width 230ms ease; }
+  .metric-note { margin-top: 4px; color: var(--muted); font-size: clamp(10px, 0.9vw, 13px); text-align: right; }
+
+  .controls { width: min(100%, 1180px); margin: clamp(12px, 1.7vw, 22px) auto 0; }
+  input[type="range"] { width: 100%; margin: 0; accent-color: var(--text); cursor: pointer; }
+  .ticks { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 5px; gap: 6px; color: var(--muted); font-size: clamp(10px, 1vw, 15px); line-height: 1.15; text-align: center; }
+  .tick { padding: 4px 3px; border-radius: 4px; }
+  .tick.active { color: var(--text); font-weight: 700; }
+  .kbd-hint { margin-top: 4px; color: var(--muted); font-size: clamp(9px, 0.82vw, 12px); text-align: center; }
+
+  @media (max-width: 720px) {
+    #app { padding: 16px 18px 14px; }
+    .metrics { gap: 20px; }
+    .circle-label { font-size: 27px; }
+    .pair-label text { font-size: 19px; }
+    #centre-label { font-size: 23px; }
+    #legend { font-size: 16px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<main id="app">
+  <header>
+    <h1 id="title">No sandbox</h1>
+    <div id="subtitle">Maximum capability — and risk.</div>
+  </header>
+
+  <section class="viz-wrap" aria-label="Interactive lethal trifecta diagram">
+    <svg viewBox="0 0 1100 650" role="img" aria-labelledby="svg-title svg-desc">
+      <title id="svg-title">The lethal trifecta under different sandbox policies</title>
+      <desc id="svg-desc">Three overlapping circles represent access to private data, ability to externally communicate, and exposure to untrusted content. A slider changes how sandbox policies restrict each capability.</desc>
+
+      <defs>
+        <pattern id="hatch" patternUnits="userSpaceOnUse" width="14" height="14" patternTransform="rotate(45)">
+          <rect width="14" height="14" fill="#f8f8f8"></rect>
+          <line x1="0" y1="0" x2="0" y2="14" stroke="#505a5f" stroke-width="3"></line>
+        </pattern>
+      </defs>
+
+      <circle id="private-circle" class="circle-fill" cx="550" cy="245" r="205" fill="#FCE28F"></circle>
+      <circle id="external-circle" class="circle-fill" cx="405" cy="420" r="205" fill="#B8DFB9"></circle>
+      <circle id="untrusted-circle" class="circle-fill" cx="695" cy="420" r="205" fill="#F5AEC2"></circle>
+
+      <path id="private-wedge" class="removed" opacity="0"></path>
+      <path id="external-wedge" class="removed" opacity="0"></path>
+      <path id="untrusted-wedge" class="removed" opacity="0"></path>
+
+      <circle id="private-disabled" class="disabled-circle" cx="550" cy="245" r="205" opacity="0"></circle>
+      <circle id="external-disabled" class="disabled-circle" cx="405" cy="420" r="205" opacity="0"></circle>
+
+      <text id="private-label" class="circle-label private-label" x="690" y="145">
+        <tspan x="690" y="145">Access to</tspan>
+        <tspan x="690" y="181">Private Data</tspan>
+      </text>
+
+      <text id="external-label" class="circle-label" x="365" y="525">
+        <tspan x="365" y="525">Ability to</tspan>
+        <tspan x="365" y="561">Externally</tspan>
+        <tspan x="365" y="597">Communicate</tspan>
+      </text>
+
+      <text id="untrusted-label" class="circle-label" x="750" y="525">
+        <tspan x="750" y="525">Exposure to</tspan>
+        <tspan x="750" y="561">Untrusted Content</tspan>
+      </text>
+
+<text id="centre-label" x="550" y="405">
+        <tspan id="centre-line-1" x="550" y="405">THE LETHAL</tspan>
+        <tspan id="centre-line-2" x="550" y="437">TRIFECTA</tspan>
+      </text>
+
+      <text id="legend" x="550" y="625"></text>
+    </svg>
+  </section>
+
+  <section class="metrics" aria-label="Illustrative comparison">
+    <div class="metric">
+      <div class="metric-head"><strong>Agent utility</strong><span id="utility-value">Very high</span></div>
+      <div class="metric-track" aria-hidden="true"><div id="utility-fill" class="metric-fill"></div></div>
+    </div>
+
+    <div class="metric">
+      <div class="metric-head"><strong>Lethal-trifecta exposure</strong><span id="risk-value">High</span></div>
+      <div class="metric-track" aria-hidden="true"><div id="risk-fill" class="metric-fill"></div></div>
+    </div>
+  </section>
+
+  <section class="controls" aria-label="Choose sandbox policy">
+    <input id="policy-slider" type="range" min="0" max="3" step="1" value="0" aria-label="Sandbox policy" aria-valuetext="No sandbox">
+    <div class="ticks" aria-hidden="true">
+      <div class="tick active">No sandbox</div>
+      <div class="tick">Docker default</div>
+      <div class="tick">Full network<br>no private data</div>
+      <div class="tick">Locked down</div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const slider = document.getElementById("policy-slider");
+  const ticks = Array.from(document.querySelectorAll(".tick"));
+  const title = document.getElementById("title");
+  const subtitle = document.getElementById("subtitle");
+
+  const privateWedge = document.getElementById("private-wedge");
+  const externalWedge = document.getElementById("external-wedge");
+  const untrustedWedge = document.getElementById("untrusted-wedge");
+  const privateDisabled = document.getElementById("private-disabled");
+  const externalDisabled = document.getElementById("external-disabled");
+
+  const privateLabel = document.getElementById("private-label");
+  const externalLabel = document.getElementById("external-label");
+  const centre1 = document.getElementById("centre-line-1");
+  const centre2 = document.getElementById("centre-line-2");
+  const legend = document.getElementById("legend");
+
+  const utilityFill = document.getElementById("utility-fill");
+  const riskFill = document.getElementById("risk-fill");
+  const utilityValue = document.getElementById("utility-value");
+  const riskValue = document.getElementById("risk-value");
+
+  function polar(cx, cy, r, deg) {
+    const rad = deg * Math.PI / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  }
+
+  function sectorPath(cx, cy, r, startDeg, endDeg) {
+    const start = polar(cx, cy, r, startDeg);
+    const end = polar(cx, cy, r, endDeg);
+    const span = ((endDeg - startDeg) % 360 + 360) % 360;
+    const largeArc = span > 180 ? 1 : 0;
+    return `M ${cx} ${cy} L ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)} Z`;
+  }
+
+  const wedgePaths = {
+    privateSmall: sectorPath(550, 245, 206, 238, 302),
+    externalSmall: sectorPath(405, 420, 206, 150, 205),
+    untrustedSmall: sectorPath(695, 420, 206, -25, 30),
+    untrustedLarge: sectorPath(695, 420, 206, -55, 55)
+  };
+
+  privateWedge.setAttribute("d", wedgePaths.privateSmall);
+  externalWedge.setAttribute("d", wedgePaths.externalSmall);
+  untrustedWedge.setAttribute("d", wedgePaths.untrustedSmall);
+
+  const states = [
+    {
+      title: "No sandbox",
+      subtitle: "Maximum capability — and the full lethal trifecta remains.",
+      privateWedge: false,
+      externalWedge: false,
+      untrustedWedge: false,
+      privateDisabled: false,
+      externalDisabled: false,
+      centre: ["THE LETHAL", "TRIFECTA"],
+      legend: "",
+      utility: 100,
+      utilityLabel: "Very high",
+      risk: 100,
+      riskLabel: "High",
+      aria: "No sandbox"
+    },
+    {
+      title: "Docker sandbox with default network policy",
+      subtitle: "Isolation removes some host, data and network exposure, but the trifecta still exists.",
+      privateWedge: true,
+      externalWedge: true,
+      untrustedWedge: "small",
+      privateDisabled: false,
+      externalDisabled: false,
+      centre: ["THE LETHAL", "TRIFECTA"],
+      utility: 90,
+      utilityLabel: "High",
+      risk: 65,
+      riskLabel: "Reduced",
+      aria: "Docker sandbox with default settings"
+    },
+    {
+      title: "Sandbox: full network, no private data",
+      subtitle: "The agent stays connected, no data to exfiltrate.",
+      privateWedge: false,
+      externalWedge: false,
+      untrustedWedge: false,
+      privateDisabled: true,
+      externalDisabled: false,
+      centre: ["", ""],
+      utility: 40,
+      utilityLabel: "Medium",
+      risk: 0,
+      riskLabel: "None",
+      aria: "Sandbox with full network access and no access to private data"
+    },
+    {
+      title: "Docker sandbox with Locked Down policy",
+      subtitle: "No external communication breaks the exfiltration path — at a substantial cost to agent utility.",
+      privateWedge: true,
+      externalWedge: false,
+      untrustedWedge: "large",
+      privateDisabled: false,
+      externalDisabled: true,
+      centre: ["", ""],
+      utility: 42,
+      utilityLabel: "Limited",
+      risk: 0,
+      riskLabel: "Broken",
+      aria: "Docker sandbox with Locked Down policy"
+    }
+  ];
+
+  function setLabel(group, lines, x, firstY) {
+    const spans = group.querySelectorAll("tspan");
+    spans.forEach((span, i) => {
+      if (i < lines.length) {
+        span.textContent = lines[i];
+        span.setAttribute("x", x);
+        span.setAttribute("y", String(firstY + 36 * i));
+        span.style.display = "";
+      } else {
+        span.style.display = "none";
+      }
+    });
+  }
+
+  function render(index) {
+    const i = Math.max(0, Math.min(states.length - 1, Number(index) || 0));
+    const state = states[i];
+
+    title.textContent = state.title;
+    subtitle.textContent = state.subtitle;
+
+    privateWedge.style.opacity = state.privateWedge ? "1" : "0";
+    externalWedge.style.opacity = state.externalWedge ? "1" : "0";
+
+    if (state.untrustedWedge === "large") {
+      untrustedWedge.setAttribute("d", wedgePaths.untrustedLarge);
+      untrustedWedge.style.opacity = "1";
+    } else {
+      untrustedWedge.setAttribute("d", wedgePaths.untrustedSmall);
+      untrustedWedge.style.opacity = state.untrustedWedge ? "1" : "0";
+    }
+
+    privateDisabled.style.opacity = state.privateDisabled ? "1" : "0";
+    externalDisabled.style.opacity = state.externalDisabled ? "1" : "0";
+
+    if (state.privateDisabled) {
+      setLabel(privateLabel, ["Private Data", "Unavailable"], 690, 145);
+    } else {
+      setLabel(privateLabel, ["Access to", "Private Data"], 690, 145);
+    }
+
+    if (state.externalDisabled) {
+      setLabel(externalLabel, ["External", "Communication", "Disabled"], 365, 505);
+    } else {
+      setLabel(externalLabel, ["Ability to", "Externally", "Communicate"], 365, 525);
+    }
+
+    centre1.textContent = state.centre[0];
+    centre2.textContent = state.centre[1];
+    legend.textContent = state.legend;
+
+    utilityFill.style.width = `${state.utility}%`;
+    riskFill.style.width = `${state.risk}%`;
+    utilityValue.textContent = state.utilityLabel;
+    riskValue.textContent = state.riskLabel;
+
+    slider.value = String(i);
+    slider.setAttribute("aria-valuetext", state.aria);
+    ticks.forEach((tick, n) => tick.classList.toggle("active", n === i));
+  }
+
+  slider.addEventListener("input", () => render(slider.value));
+
+  window.addEventListener("keydown", (event) => {
+    if (event.target && ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName)) return;
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      render(Math.min(3, Number(slider.value) + 1));
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      render(Math.max(0, Number(slider.value) - 1));
+    } else if (/^[1-4]$/.test(event.key)) {
+      event.preventDefault();
+      render(Number(event.key) - 1);
+    }
+  });
+
+  render(0);
+})();
+</script>
+</body>
+</html>

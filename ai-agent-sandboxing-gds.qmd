@@ -434,47 +434,5 @@ git diff main...sandbox-clone-boundary-test/vscode-task-demo
   2. Disable automatic tasks unless I really need them.
   3. Review changes in VS Code in the sandbox.
 
+# {background-iframe="lethal-trifecta-sandbox-slider.html" background-interactive="true"}
 
-## What problem does a sandbox solve?
-
-::: {.three-col}
-::: {.plain-block .ok-stat}
-
-**Host**
-
-Agent can't normally read, modify or execute directly on the host.
-
-:::
-::: {.plain-block .warn-stat}
-
-**Data**
-
-Code or data available to the agent in the sandbox is still at risk.
-
-:::
-::: {.plain-block .bad-stat}
-
-**Authority**
-
-Sandbox has no effect on what an agent can do with its credentials.
-
-:::
-:::
-
-::: {style="text-align:center;"}
-![](./img/lethal_trifecta.png){width=40%}  
-:::
-
-## "Sandboxed" is not enough {.centre-slide}
-
-::: {.big}
-The question is not just whether the agent is sandboxed.
-:::
-
-::: {.emphasis}
-What can it read? Where can it communicate? What actions is it authorised to take?
-:::
-
-::: {.caption}
-Based on: [Sandboxing AI coding agents](https://www.samrickman.com/blog/ai-agent-sandboxes) and [How a sandboxed agent left code for my host to execute](https://www.samrickman.com/blog/ai-agent-sbx-clone-vs-direct-execute)
-:::
