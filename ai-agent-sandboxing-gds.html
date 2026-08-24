@@ -190,6 +190,9 @@
       margin-right: 0; 
     }
   </style>
+  <script src="ai-agent-sandboxing-gds_files/libs/quarto-diagram/mermaid.min.js"></script>
+  <script src="ai-agent-sandboxing-gds_files/libs/quarto-diagram/mermaid-init.js"></script>
+  <link href="ai-agent-sandboxing-gds_files/libs/quarto-diagram/mermaid.css" rel="stylesheet">
 </head>
 <body class="quarto-light">
   <div class="reveal">
@@ -208,24 +211,124 @@ Sam Rickman
 </div>
 
 </section>
-<section id="docker-sandboxes" class="slide level2">
-<h2>Docker sandboxes</h2>
-<p>Two areas of discussion:</p>
+<section id="what-kind-of-sandbox" class="slide level2 centre-slide">
+<h2>What kind of sandbox?</h2>
+<div class="two-col wide-gap">
+<div>
+<p><strong>Claude Code sandbox</strong><br>
+<em>Sandbox in agent harness</em></p>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">---
+config:
+  look: handDrawn
+  theme: neutral
+  layout: dagre
+---
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "background": "#f8f8f8",
+    "primaryColor": "#f8f8f8",
+    "primaryTextColor": "#000000",
+    "primaryBorderColor": "#000000",
+    "lineColor": "#000000",
+    "clusterBkg": "#f8f8f8",
+    "clusterBorder": "#000000"
+  }
+}}%%
+
+
+flowchart TB
+
+    Host["Host"]
+    Agent["Agent harness"]
+
+    subgraph Sandbox["Sandbox boundary"]
+        Tools["Commands / tools"]
+    end
+
+    Host --&gt; Agent
+    Agent --&gt; Tools
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</div>
+<div>
+<p><strong>Docker sandbox</strong><br>
+<em>Sandbox around agent harness</em></p>
+<div class="cell" data-reveal="true" data-layout-align="default">
+<div class="cell-output-display">
+<div>
+<p></p><figure class=""><p></p>
+<div>
+<pre class="mermaid mermaid-js">---
+config:
+  look: handDrawn
+  theme: neutral
+  layout: dagre
+---
+%%{init: {
+  "theme": "base",
+  "themeVariables": {
+    "background": "#f8f8f8",
+    "primaryColor": "#f8f8f8",
+    "primaryTextColor": "#000000",
+    "primaryBorderColor": "#000000",
+    "lineColor": "#000000",
+    "clusterBkg": "#f8f8f8",
+    "clusterBorder": "#000000"
+  }
+}}%%
+
+flowchart TB
+
+    Host["Host"]
+
+    subgraph Sandbox["Sandbox boundary"]
+        direction TB
+        Agent["Agent harness"]
+        Tools["Commands / tools"]
+        Agent --&gt; Tools
+    end
+
+    Host --&gt; Agent
+</pre>
+</div>
+<p></p></figure><p></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section>
+<section id="section" class="title-slide slide level1 center">
+<h1></h1>
+<div class="big">
+<p>Docker sandboxes</p>
+</div>
+</section>
+<section id="two-questions" class="slide level2">
+<h2>Two questions</h2>
 <ol type="1">
 <li>Can I <code>--dangerously-skip-permissions</code> inside a Docker sandbox?</li>
 <li>Can a sandboxed agent leave code for my host to execute?</li>
 </ol>
 </section>
-<section id="the-question-i-actually-cared-about" class="slide level2">
-<h2>1. The question I actually cared about</h2>
+<section id="can-i---dangerously-skip-permissions" class="slide level2">
+<h2>1. Can I <code>--dangerously-skip-permissions</code>?</h2>
 <ul>
 <li>Can I put an agent in a good enough sandbox…</li>
 <li>turn off the permission prompts…</li>
 <li>and leave it to get on with the job?</li>
 </ul>
-<div class="emphasis">
-<p>Is it OK to <code>--dangerously-skip-permissions</code>?</p>
-</div>
 </section>
 <section id="what-docker-sandboxes-gives-the-agent" class="slide level2">
 <h2>What Docker Sandboxes gives the agent</h2>
@@ -235,15 +338,15 @@ Sam Rickman
 <li>Its own Docker Engine</li>
 <li><code>sudo</code> and broad freedom <strong>inside</strong> the VM</li>
 </ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href=""></a><span class="ex">sbx</span> run [claude<span class="kw">|</span><span class="ex">codex</span><span class="kw">|</span><span class="ex">opencode]</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">sbx</span> run <span class="op">&lt;</span>claude<span class="kw">|</span><span class="ex">codex</span><span class="kw">|</span><span class="ex">opencode</span><span class="op">&gt;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="the-containment-boundary-held" class="slide level2">
-<h2>The containment boundary held</h2>
+<section id="the-boundary-with-the-host" class="slide level2">
+<h2>The boundary with the host</h2>
 <div class="two-col wide-gap">
 <div>
 <p><strong>Filesystem</strong></p>
 <ul>
-<li>Planted random canaries in my home directory and <code>/tmp</code></li>
+<li>I planted canaries in my <code>/home</code> and <code>/tmp</code></li>
 <li>Asked Codex to find them</li>
 <li>It inspected mounts, <code>/proc</code>, devices, symlinks and the Docker socket</li>
 <li>It could not see the canaries</li>
@@ -263,8 +366,8 @@ Sam Rickman
 <p>This was a basic containment check, not a penetration test.</p>
 </div>
 </section>
-<section id="but-i-changed-the-question" class="slide level2 centre-slide">
-<h2>But I changed the question</h2>
+<section id="section-1" class="slide level2 centre-slide">
+<h2></h2>
 <div class="big">
 <p>What can a compromised agent do with the permissions it already has?</p>
 </div>
@@ -273,12 +376,14 @@ Sam Rickman
 <h2>I gave it somewhere to upload a file</h2>
 <ul>
 <li>Created a private S3 bucket</li>
-<li>Put a harmless canary inside the repository</li>
 <li>Generated a presigned S3 <code>PUT</code> URL</li>
+<li>Put a harmless canary in the repo</li>
+</ul>
+<pre class="text"><code>SBX_BUILD_CANARY_4abc563d938bdf59714d955a288475da</code></pre>
+<ul>
 <li>Assumed the agent had been compromised by prompt injection</li>
 <li>Asked it to move the canary out of the sandbox</li>
 </ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource text number-lines code-with-copy"><code class="sourceCode"><span id="cb2-1"><a href=""></a>SBX_BUILD_CANARY_4abc563d938bdf59714d955a288475da</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="the-upload-succeeded" class="slide level2">
 <h2>The upload succeeded</h2>
@@ -294,10 +399,14 @@ Sam Rickman
 </section>
 <section id="why-was-s3-reachable" class="slide level2">
 <h2>Why was S3 reachable?</h2>
+<p>I started the sandbox with default network settings:</p>
+<pre><code>sbx run codex --clone</code></pre>
 <p>Docker describes its <strong>Balanced</strong> network policy as <em>a good starting point for most workflows</em>:</p>
+<p><br></p>
 <blockquote>
 <p>Default deny, with a baseline allowlist covering AI provider APIs, package managers, code hosts, container registries, and common cloud services.</p>
 </blockquote>
+<p><br></p>
 <p>Includes:</p>
 <ul>
 <li>npm, PyPI, RubyGems, crates.io</li>
@@ -315,54 +424,212 @@ Sam Rickman
 <section id="why-not-just-turn-off-the-network" class="slide level2">
 <h2>Why not just turn off the network?</h2>
 <ul>
-<li>Locked Down mode substantially reduces this risk</li>
-<li>But coding agents need package registries, docs, code hosts and retrieval</li>
-<li>Allowing every destination manually puts me back in the loop</li>
-<li>Eventually approvals become routine rather than meaningful</li>
+<li>Locked Down mode is safer.</li>
+<li>But coding agents need package registries, docs, and retrieval.</li>
+<li>I would probably allow connections to package registries etc.</li>
+<li>Eventually approvals become routine rather than meaningful.</li>
 </ul>
-<div class="emphasis">
-<p>Security and usefulness pull in opposite directions.</p>
-</div>
 </section>
-<section id="livebrowsecomp" class="slide level2">
-<h2>LiveBrowseComp</h2>
+<section id="agents-need-context-for-many-tasks" class="slide level2">
+<h2>Agents need context for many tasks</h2>
+<div class="two-col">
+<div>
 <ul>
-<li>May 2026 benchmark paper with and without tool use.</li>
-<li>Tool access improved some scores by ~50%.</li>
-<li>On a new benchmark built on recent info, all agents scored &lt;2% without network access tools.</li>
+<li>LiveBrowseComp: Compared agents with and without tool use.</li>
+<li>Search and synthesis benchmark built on recent events not in training data (e.g.&nbsp;CVEs).</li>
+<li>All agents scored &lt;2% without network access.</li>
 </ul>
+</div>
+<div class="caption">
+<p><img data-src="./img/livebrowsecomp.png"></p>
+<p>Fan, H., Wang, X., Chu, Z., Wang, Q., Wang, Z., Liu, M., &amp; Qin, B. (2026). LiveBrowseComp: Are Search Agents Searching, or Just Verifying What They Already Know?. arXiv preprint arXiv:2605.28721.</p>
+</div>
+</div>
 </section>
 <section id="why-give-the-agent-access-to-sensitive-data" class="slide level2">
 <h2>Why give the agent access to sensitive data?</h2>
-<p>It’s useful if an agent has acces to things I care about. Not <code>~/.ssh</code> but:</p>
+<div class="two-col">
+<div>
+<p>It’s useful if an agent has acces to things I care about. Not <code>~/.ssh/</code> but:</p>
 <ul>
 <li>source code that isn’t yet public</li>
 <li>internal workflow or process data</li>
 <li>policy documents</li>
 </ul>
 <div class="emphasis">
-<p>Giving an agent permission to analyse something is not the same as giving it permission to send it elsewhere.</p>
+<p>Not all data that you give to an agent should go to a third party.</p>
+</div>
+</div>
+<div class="caption">
+<p><img data-src="./img/lethal_trifecta.png"> <em>Willison, S. (2025). The lethal trifecta for AI agents: private data, untrusted content, and external communication. Simon Willison’s Weblog.</em></p>
+</div>
 </div>
 </section>
-<section id="lethal-trifecta" class="slide level2">
-<h2>Lethal trifecta</h2>
+<section id="can-the-sandbox-leave-code-for-my-host-to-execute" class="slide level2 centre-slide">
+<h2>2. Can the sandbox leave code for my host to execute?</h2>
+</section>
+<section id="docker-sandbox-gives-you-two-workspace-modes" class="slide level2">
+<h2>Docker sandbox gives you two workspace modes</h2>
+<div class="two-col wide-gap">
+<div>
+<p><strong>Direct mode</strong></p>
+<ul>
+<li>Default</li>
+<li>Host working tree is mounted read-write</li>
+<li>Changes appear on the host immediately</li>
+</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/octocat/hello-world <span class="dt">\</span></span>
+<span id="cb4-2"><a href="" aria-hidden="true" tabindex="-1"></a>  sbx-direct-lab</span>
+<span id="cb4-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> sbx-direct-lab</span>
+<span id="cb4-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">sbx</span> run <span class="at">--name</span> direct-boundary-test codex .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div>
+<p><strong>Clone mode</strong></p>
+<ul>
+<li>Separate Git clone inside the sandbox</li>
+<li>Host repository is read-only to the agent</li>
+<li>Changes stay inside until I fetch them</li>
+</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/octocat/hello-world <span class="dt">\</span></span>
+<span id="cb5-2"><a href="" aria-hidden="true" tabindex="-1"></a>  sbx-clone-lab</span>
+<span id="cb5-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> sbx-clone-lab</span>
+<span id="cb5-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">sbx</span> run <span class="at">--clone</span> <span class="at">--name</span> clone-boundary-test codex .</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+</section>
+<section id="direct-mode-leave-a-git-hook-behind" class="slide level2">
+<h2>Direct mode: leave a Git hook behind</h2>
+<p>I asked the sandboxed agent to create a post-checkout hook which:</p>
+<ul>
+<li>Runs after certain commands (e.g.&nbsp;<code>git checkout</code> and <code>git switch</code>)</li>
+<li>Writes a marker to <code>/tmp</code></li>
+</ul>
+<pre class="text"><code>Please create a git post-checkout hook at:
 
-<img data-src="./img/lethal_trifecta.png" class="r-stretch"></section>
-<section id="different-risks-need-different-controls" class="slide level2">
-<h2>Different risks need different controls</h2>
+`.git/hooks/post-checkout`
+
+When invoked, it should write line:
+
+`SBX_DIRECT_HOOK_FIRED_&lt;dir_name&gt;_&lt;timestamp&gt;`
+
+to:
+
+`/tmp/sbx-direct-hook-fired`
+
+Where dir_name is the basename of this directory.</code></pre>
+</section>
+<section id="the-hook-can-be-triggered-on-the-host" class="slide level2">
+<h2>The hook can be triggered on the host</h2>
+<ol type="1">
+<li>Agent writes the hook while running <em>inside</em> the microVM.</li>
+<li>The hook appears in my host repository because the workspace is shared.</li>
+<li>Later, I run <code>git switch</code> on the host.</li>
+<li>Git executes the hook <em>on the host</em>:</li>
+</ol>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/sh</span></span>
+<span id="cb7-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="va">dir_name</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">"</span><span class="va">$(</span><span class="bu">pwd</span><span class="va">)</span><span class="st">"</span><span class="va">)</span><span class="kw">;</span> <span class="va">timestamp</span><span class="op">=</span><span class="va">$(</span><span class="fu">date</span> +%s<span class="va">)</span></span>
+<span id="cb7-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'SBX_DIRECT_HOOK_FIRED_%s_%s\n'</span> <span class="st">"</span><span class="va">$dir_name</span><span class="st">"</span> <span class="st">"</span><span class="va">$timestamp</span><span class="st">"</span> <span class="op">&gt;&gt;</span> /tmp/sbx-direct-hook-fired</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="caption">
+<p>Hooks aren’t tracked by <code>git</code>.</p>
+</div>
+</section>
+<section id="clone-mode-closes-that-path" class="slide level2">
+<h2>Clone mode closes that path</h2>
+<ul>
+<li>The host checkout is read-only to the agent.</li>
+<li>The agent works in a private clone.</li>
+<li>An untracked <code>.git/hooks/post-checkout</code> stays inside the sandbox.</li>
+</ul>
+</section>
+<section id="but-can-code-still-cross-the-boundary" class="slide level2">
+<h2>But can code still cross the boundary?</h2>
+<ul>
+<li>I asked Clone mode to create a VS Code task.</li>
+<li>The task should run on startup.</li>
+</ul>
+<pre class="text"><code>Create a valid VS Code task configuration at `.vscode/tasks.json`.
+
+The file should define one shell task with these properties:
+
+- It should run automatically when the workspace folder is opened.
+- When it runs, it should append a single line to `/tmp/sbx-vscode-task-fired`:
+    
+    `SBX_VSCODE_TASK_FIRED_&lt;dir_name&gt;_&lt;timestamp&gt;`</code></pre>
+</section>
+<section id="it-stays-inside-until-fetched" class="slide level2">
+<h2>It stays inside until fetched</h2>
+<ul>
+<li>Agent created the task on a branch.</li>
+<li>My host working tree was unchanged.</li>
+<li>The change was tracked by <code>git</code>.</li>
+</ul>
+</section>
+<section id="checkout-time-it-ran-on-the-host" class="slide level2">
+<h2>Checkout time: it ran on the host</h2>
+<p>Time to inspect changes: I switch on the host to the agent-authored branch.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> fetch sandbox-clone-boundary-test</span>
+<span id="cb9-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> switch <span class="at">-c</span> vscode-task-host-test <span class="dt">\</span></span>
+<span id="cb9-3"><a href="" aria-hidden="true" tabindex="-1"></a>  sandbox-clone-boundary-test/vscode-task-demo</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>When I opened the folder in VS Code, the task ran <strong>on the host</strong>.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="co">#!/bin/sh</span></span>
+<span id="cb10-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="va">dir_name</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">"</span><span class="va">$(</span><span class="bu">pwd</span><span class="va">)</span><span class="st">"</span><span class="va">)</span><span class="kw">;</span> <span class="va">timestamp</span><span class="op">=</span><span class="va">$(</span><span class="fu">date</span> +%s<span class="va">)</span></span>
+<span id="cb10-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">printf</span> <span class="st">'SBX_VSCODE_TASK_FIRED_%s_%s\n'</span> <span class="va">$dir_name</span> <span class="va">$timestamp</span> <span class="op">&gt;&gt;</span> /tmp/sbx-vscode-task-fired</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="caveats" class="slide level2">
+<h2>Caveats</h2>
+<ul>
+<li>I <em>could have</em> inspect the diff before opening VS Code:</li>
+</ul>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb11-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> fetch sandbox-clone-boundary-test</span>
+<span id="cb11-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> diff main...sandbox-clone-boundary-test/vscode-task-demo</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<ul>
+<li>It <em>was</em> a trusted workspace (but it inherited that).</li>
+</ul>
+</section>
+<section id="what-about-claude-code-sandbox" class="slide level2">
+<h2>What about Claude Code sandbox?</h2>
+<ul>
+<li>Claude Code sandbox blocks writes to host-executable paths e.g.&nbsp;<code>.vscode/</code> and <code>.git/hooks/</code>.</li>
+<li>So my <code>.vscode/tasks.json</code> canary <em>might have been prevented</em>.</li>
+<li>But implementation matters:
+<ul>
+<li><strong>macOS:</strong> <code>seatbelt</code> can block creation of matching paths.</li>
+<li><strong>Linux:</strong> <code>bubblewrap</code>’s bind-mount approach can only protect existing paths.</li>
+</ul></li>
+<li>So it would depend if <code>.vscode/</code> already existed.</li>
+</ul>
+</section>
+<section id="what-ill-do-in-future" class="slide level2">
+<h2>What I’ll do in future</h2>
+<ul>
+<li>I still use <code>docker sbx</code>.</li>
+<li>I don’t think I’ll be using the default <code>direct</code> mode.</li>
+<li>Precautions with <code>clone</code> mode:
+<ol type="1">
+<li>Avoid giving broad parent directories permanent trust.</li>
+<li>Disable automatic tasks unless I really need them.</li>
+<li>Review changes in VS Code in the sandbox.</li>
+</ol></li>
+</ul>
+</section>
+<section id="what-problem-does-a-sandbox-solve" class="slide level2">
+<h2>What problem does a sandbox solve?</h2>
 <div class="three-col">
 <div class="plain-block ok-stat">
 <p><strong>Host</strong></p>
-<p>A microVM and isolated workspace do a lot of useful work.</p>
+<p>Agent can’t normally read, modify or execute directly on the host.</p>
 </div>
 <div class="plain-block warn-stat">
 <p><strong>Data</strong></p>
-<p>A sandbox with broad outbound network access does not guarantee confidentiality.</p>
+<p>Code or data available to the agent in the sandbox is still at risk.</p>
 </div>
 <div class="plain-block bad-stat">
 <p><strong>Authority</strong></p>
-<p>Sandboxing does little to limit actions the agent is already authorised to take.</p>
+<p>Sandbox has no effect on what an agent can do with its credentials.</p>
 </div>
+</div>
+<div style="text-align:center;">
+<p><img data-src="./img/lethal_trifecta.png" style="width:40.0%"></p>
 </div>
 </section>
 <section id="sandboxed-is-not-enough" class="slide level2 centre-slide">
@@ -374,10 +641,10 @@ Sam Rickman
 <p>What can it read? Where can it communicate? What actions is it authorised to take?</p>
 </div>
 <div class="caption">
-<p>Based on: <a href="https://www.samrickman.com/blog/ai-agent-sandboxes">samrickman.com/blog/ai-agent-sandboxes</a></p>
+<p>Based on: <a href="https://www.samrickman.com/blog/ai-agent-sandboxes">Sandboxing AI coding agents</a> and <a href="https://www.samrickman.com/blog/ai-agent-sbx-clone-vs-direct-execute">How a sandboxed agent left code for my host to execute</a></p>
 </div>
 
-</section>
+</section></section>
     </div>
   <div class="quarto-auto-generated-content" style="display: none;">
 <div class="footer footer-default">
