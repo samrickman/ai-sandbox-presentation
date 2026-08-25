@@ -2,6 +2,8 @@
 title: "Sandboxing AI coding agents"
 subtitle: "Where should an AI agent's sandbox end?"
 author: "Sam Rickman"
+date: 2026-08-25
+date-format: MMM YYYY
 format:
   revealjs:
     theme: "gds-style.scss"
