@@ -19,7 +19,7 @@ The deck explores Docker Sandboxes network and workspace policies, briefly menti
 The deck is written in Quarto and rendered with RevealJS. From the repository root:
 
 ```bash
-quarto render ai-agent-sandboxing-gds.qmd
+quarto render ai-agent-sandboxing.qmd
 ```
 
 The presentation expects the accompanying theme, images and interactive HTML assets to remain at the relative paths used by the QMD file.
